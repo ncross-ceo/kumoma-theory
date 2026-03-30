@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>Kumoma Theory v3.0 — Complex Consciousness Simulator</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body { font-family: 'Helvetica Neue', sans-serif; background: #0a0a0c; color: #d1d1d1; margin: 0; padding: 20px; }
+        .wrapper { max-width: 1200px; margin: 0 auto; display: grid; grid-template-columns: 350px 1fr; gap: 20px; }
+        .sidebar { background: #16161a; padding: 25px; border-radius: 15px; border: 1px solid #333; height: fit-content; }
+        .main-content { display: flex; flex-direction: column; gap: 20px; }
+        .control-box { margin-bottom: 20px; }
+        label { display: block; font-size: 0.8em; color: #00d4ff; margin-bottom: 8px; letter-spacing: 1px; }
+        input[type="range"] { width: 100%; margin-bottom: 10px; accent-color: #00d4ff; }
+        .val { float: right; color: #fff; font-family: monospace; }
+        .graph-card { background: #16161a; border-radius: 15px; padding: 15px; border: 1px solid #222; }
+        h1 { font-size: 1.4em; color: #fff; margin: 0 0 5px 0; border-left: 3px solid #ff007b; padding-left: 10px; }
+        h2 { font-size: 0.9em; color: #888; margin: 0 0 20px 0; padding-left: 13px; font-weight: normal; }
+        .status-panel { font-size: 0.85em; background: #000; padding: 10px; border-radius: 5px; color: #0f0; font-family: monospace; border: 1px solid #004400; line-height: 1.8; }
+        p.author { font-size: 0.75em; color: #444; margin: 0 0 20px 0; }
+        @media (max-width: 700px) { .wrapper { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+<div class="wrapper">
+    <div class="sidebar">
+        <h1>Kumoma Theory (雲間理論)</h1>
+        <h2>Complex Consciousness Simulator v3.0</h2>
+        <p class="author">Hitoshi Kurozumi / Northern Cross LLC<br>DOI: 10.17605/OSF.IO/YA6D7</p>
+
+        <div class="control-box">
+            <label>W — Boundary Resistance <span id="wV" class="val">0.200</span></label>
+            <input type="range" id="wS" min="0.001" max="1.0" step="0.001" value="0.2">
+        </div>
+        <div class="control-box">
+            <label>Q — Qualia Input <span id="qV" class="val">50</span></label>
+            <input type="range" id="qS" min="2" max="200" step="1" value="50">
+        </div>
+        <div class="control-box">
+            <label>Phase θ — Consciousness Phase <span id="tV" class="val">0.00</span></label>
+            <input type="range" id="tS" min="0" max="6.28" step="0.01" value="0">
+        </div>
+        <div class="control-box">
+            <label>Entropy — Information Disorder <span id="eV" class="val">1.0</span></label>
+            <input type="range" id="eS" min="0.1" max="2.0" step="0.1" value="1.0">
+        </div>
+
+        <div class="status-panel" id="status">
+            STATUS: READY<br>
+            SINGULARITY: NONE<br>
+            Φ_MAX: --<br>
+            ENTROPY: STABLE
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="graph-card"><div id="complexPlane" style="height:320px;"></div></div>
+        <div class="graph-card"><div id="timeCurvature" style="height:320px;"></div></div>
+    </div>
+</div>
+
+<script>
+    const cfg = {displayModeBar: false};
+
+    function update() {
+        const W = parseFloat(document.getElementById('wS').value);
+        const Q = parseFloat(document.getElementById('qS').value);
+        const T = parseFloat(document.getElementById('tS').value);
+        const E = parseFloat(document.getElementById('eS').value);
+
+        document.getElementById('wV').textContent = W.toFixed(3);
+        document.getElementById('qV').textContent = Q;
+        document.getElementById('tV').textContent = T.toFixed(2);
+        document.getElementById('eV').textContent = E.toFixed(1);
+
+        // 複素意識経路
+        let traceX = [], traceY = [];
+        for (let i = 0; i < 100; i++) {
+            let t = i / 10;
+            let decay = Math.exp(-0.1 * t * E);
+            traceX.push(Q * Math.cos(t + T) * decay);
+            traceY.push((Q / W) * Math.sin(t + T) * decay);
+        }
+
+        Plotly.react('complexPlane', [{
+            x: traceX, y: traceY, mode: 'lines+markers',
+            line: {color: '#ff007b', width: 2},
+            marker: {size: 3, color: '#00d4ff'}
+        }], {
+            title: {text: 'Kumoma Theory: Complex Consciousness Path Z = C + L·i', font: {size: 16, color: '#fff'}},
+            paper_bgcolor: '#16161a', plot_bgcolor: '#16161a',
+            font: {color: '#aaa', size: 12},
+            margin: {t: 50, b: 45, l: 60, r: 15},
+            xaxis: {title: 'Physical Dimension C (Real)', gridcolor: '#333', zeroline: true, zerolinecolor: '#444'},
+            yaxis: {title: 'Subjective Time L (Imaginary)', gridcolor: '#333', zeroline: true, zerolinecolor: '#444'},
+            showlegend: false
+        }, cfg);
+
+        // Φ曲率グラフ
+        let phiX = [], phiY = [];
+        for (let w = 0.01; w <= 1.0; w += 0.02) {
+            phiX.push(parseFloat(w.toFixed(3)));
+            phiY.push((1 / w) * (Q * Math.log(Q) - Q));
+        }
+        const phiMax = Math.max(...phiY);
+
+        // オレンジ点: 現在のWでのΦ値
+        const currentPhi = (1 / W) * (Q * Math.log(Q) - Q);
+
+        Plotly.react('timeCurvature', [
+            {
+                x: phiX, y: phiY,
+                fill: 'tozeroy', fillcolor: 'rgba(0,212,255,0.1)',
+                line: {color: '#00d4ff', width: 2},
+                mode: 'lines', type: 'scatter'
+            },
+            {
+                x: [W], y: [currentPhi],
+                mode: 'markers', type: 'scatter',
+                marker: {color: '#ff6600', size: 12, symbol: 'circle'}
+            }
+        ], {
+            title: {text: 'Kumoma Theory: Curvature of Conscious Time Φ vs W', font: {size: 16, color: '#fff'}},
+            paper_bgcolor: '#16161a', plot_bgcolor: '#16161a',
+            font: {color: '#aaa', size: 12},
+            margin: {t: 50, b: 45, l: 60, r: 15},
+            xaxis: {title: 'Boundary Resistance W', autorange: 'reversed', gridcolor: '#333', zeroline: false},
+            yaxis: {title: 'Time Generation Rate Φ', type: 'log', gridcolor: '#333', zeroline: false},
+            showlegend: false
+        }, cfg);
+
+        const singular = W < 0.05;
+        document.getElementById('status').innerHTML = `
+            STATUS: ACTIVE<br>
+            SINGULARITY: ${singular ? '<span style="color:red">DETECTED</span>' : 'NONE'}<br>
+            Φ_MAX: ${phiMax.toFixed(0)}<br>
+            ENTROPY: ${E > 1.5 ? '<span style="color:orange">HIGH</span>' : 'STABLE'}
+        `;
+    }
+
+    ['wS','qS','tS','eS'].forEach(id => document.getElementById(id).addEventListener('input', update));
+    update();
+</script>
+</body>
+</html>
